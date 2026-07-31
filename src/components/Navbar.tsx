@@ -1,4 +1,5 @@
-import { Bird, ShieldCheck, Heart } from 'lucide-react';
+import logoUrl from '/logo.png';
+import { ShieldCheck, Heart } from 'lucide-react';
 
 interface NavbarProps {
   totalObservations: number;
@@ -10,9 +11,7 @@ export function Navbar({ totalObservations, loading, onOpenAction }: NavbarProps
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <div className="navbar-icon">
-          <Bird size={20} />
-        </div>
+        <img src={logoUrl} alt="SilentSkies" className="navbar-logo" />
         <div className="navbar-title">
           <span className="navbar-name">SilentSkies</span>
           <span className="navbar-tagline">Global Avian Intelligence</span>
@@ -22,8 +21,8 @@ export function Navbar({ totalObservations, loading, onOpenAction }: NavbarProps
       <div className="navbar-center">
         <div className="navbar-badge">
           <span className="badge-dot" />
-          <ShieldCheck size={13} />
-          <span>AI 4 WORLD HACKATHON</span>
+          <ShieldCheck size={12} />
+          <span>AI 4 World Hackathon</span>
         </div>
       </div>
 
@@ -32,15 +31,15 @@ export function Navbar({ totalObservations, loading, onOpenAction }: NavbarProps
           <span className="stat-label">GBIF Occurrences</span>
           <span className="stat-value">
             {loading ? (
-              <span className="pulse-text">Loading GBIF data...</span>
+              <span className="pulse-text">Fetching…</span>
             ) : (
-              `${totalObservations.toLocaleString()} records`
+              `${totalObservations.toLocaleString()} obs`
             )}
           </span>
         </div>
 
         <button className="navbar-action-btn" onClick={onOpenAction}>
-          <Heart size={14} />
+          <Heart size={13} />
           <span>Take Action</span>
         </button>
       </div>

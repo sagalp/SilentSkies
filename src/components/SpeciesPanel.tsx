@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { Search, AlertTriangle, TrendingDown, TrendingUp, Minus, ChevronRight, Layers, BarChart2, CheckCircle2, ShieldAlert, Compass, Loader2 } from 'lucide-react';
+import {
+  Search, AlertTriangle, TrendingDown, TrendingUp, Minus,
+  ChevronRight, Layers, BarChart2, CheckCircle2, ShieldAlert,
+  Compass, Loader2,
+} from 'lucide-react';
 import type { Species, IntelligenceAlert } from '../types';
 import { useRiskScore } from '../hooks/useRiskScore';
 import { WATCH_LIST, IUCN_STATUS_LABELS, IUCN_STATUS_COLORS, PRIORITY_COLORS } from '../data/watchlist';
@@ -8,6 +12,8 @@ interface SpeciesPanelProps {
   selected: Species;
   onSelect: (species: Species) => void;
   onAnalyze: () => void;
+  year: number;
+  onYearChange: (year: number) => void;
 }
 
 function RiskBadge({ taxonKey }: { taxonKey: string }) {
@@ -24,21 +30,21 @@ function RiskBadge({ taxonKey }: { taxonKey: string }) {
   if (!riskScore) return null;
 
   const color =
-    riskScore.score >= 70 ? '#ef4444' :
-    riskScore.score >= 50 ? '#f59e0b' :
-    riskScore.score >= 35 ? '#06b6d4' : '#10b981';
+    riskScore.score >= 70 ? '#e63946' :
+    riskScore.score >= 50 ? '#e9c46a' :
+    riskScore.score >= 35 ? '#48cae4' : '#52b788';
 
   return (
-    <span className="risk-badge" style={{ borderColor: `${color}44`, background: `${color}15`, color }}>
+    <span className="risk-badge" style={{ borderColor: `${color}44`, background: `${color}14`, color }}>
       {riskScore.score}
     </span>
   );
 }
 
 function TrendIcon({ trend }: { trend: string }) {
-  if (trend === 'declining') return <TrendingDown size={14} className="trend-icon decline" />;
-  if (trend === 'recovering') return <TrendingUp size={14} className="trend-icon recover" />;
-  return <Minus size={14} className="trend-icon stable" />;
+  if (trend === 'declining') return <TrendingDown size={13} className="trend-icon decline" />;
+  if (trend === 'recovering') return <TrendingUp size={13} className="trend-icon recover" />;
+  return <Minus size={13} className="trend-icon stable" />;
 }
 
 function IntelligenceAlertBanner({ alert }: { alert: IntelligenceAlert }) {
@@ -51,12 +57,12 @@ function IntelligenceAlertBanner({ alert }: { alert: IntelligenceAlert }) {
     <div
       className="risk-alert"
       style={{
-        background: `${alert.badgeColor}15`,
-        borderColor: `${alert.badgeColor}40`,
+        background: `${alert.badgeColor}13`,
+        borderColor: `${alert.badgeColor}38`,
         color: alert.badgeColor,
       }}
     >
-      <Icon size={16} style={{ flexShrink: 0 }} />
+      <Icon size={15} style={{ flexShrink: 0 }} />
       <div className="alert-content">
         <span className="alert-title">{alert.title}</span>
         <p className="alert-desc">{alert.description}</p>
@@ -65,9 +71,136 @@ function IntelligenceAlertBanner({ alert }: { alert: IntelligenceAlert }) {
   );
 }
 
-function SelectedSpeciesCard({ species, onAnalyze }: { species: Species; onAnalyze: () => void }) {
+/* ─── SVG Sparkline with clickable year bars ─────────── */
+function SparklineChart({
+  yearlyCounts,
+  peakYear,
+  activeYear,
+  onYearClick,
+}: {
+  yearlyCounts: { year: number; count: number; normalized: number }[];
+  peakYear: number;
+  activeYear: number;
+  onYearClick: (year: number) => void;
+}) {
+  const W = 260;
+  const H = 48;
+  const PAD_B = 14; // bottom padding for year label
+  const chartH = H - PAD_B;
+
+  const n = yearlyCounts.length;
+  const barW = n > 0 ? W / n : 10;
+
+  // Build SVG path for the line + area
+  const pts = yearlyCounts.map((yd, i) => {
+    const x = i * barW + barW / 2;
+    const y = chartH - Math.max(2, yd.normalized * (chartH - 4));
+    return { x, y, ...yd };
+  });
+
+  const pathD = pts.length > 1
+    ? `M ${pts[0].x} ${pts[0].y} ` + pts.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ')
+    : '';
+
+  const areaD = pts.length > 1
+    ? `M ${pts[0].x} ${chartH} L ${pts[0].x} ${pts[0].y} ` +
+      pts.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ') +
+      ` L ${pts[pts.length - 1].x} ${chartH} Z`
+    : '';
+
+  return (
+    <div className="sparkline-svg-wrap">
+      <svg viewBox={`0 0 ${W} ${H}`} height={H} width="100%" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#52b788" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#52b788" stopOpacity="0.02" />
+          </linearGradient>
+          <linearGradient id="spark-line-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#e63946" />
+            <stop offset="50%" stopColor="#e9c46a" />
+            <stop offset="100%" stopColor="#52b788" />
+          </linearGradient>
+        </defs>
+
+        {/* Area fill */}
+        {areaD && <path d={areaD} fill="url(#spark-grad)" />}
+
+        {/* Line */}
+        {pathD && (
+          <path
+            d={pathD}
+            fill="none"
+            stroke="url(#spark-line-grad)"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+        )}
+
+        {/* Active year dot + ring */}
+        {pts.map((p) => {
+          const isActive = p.year === activeYear;
+          const isPeak = p.year === peakYear;
+          return (
+            <g key={p.year}>
+              {/* Hit area per bar column */}
+              <rect
+                x={p.x - barW / 2}
+                y={0}
+                width={barW}
+                height={chartH}
+                className="sparkline-hit-area"
+                onClick={() => onYearClick(p.year)}
+              >
+                <title>{p.year}: {p.count.toLocaleString()} records — click to jump</title>
+              </rect>
+
+              {/* Peak year marker */}
+              {isPeak && !isActive && (
+                <circle cx={p.x} cy={p.y} r={3} fill="#e9c46a" opacity={0.8} />
+              )}
+
+              {/* Active year indicator */}
+              {isActive && (
+                <>
+                  <circle cx={p.x} cy={p.y} r={4} fill="#52b788" />
+                  <circle cx={p.x} cy={p.y} r={7} fill="none" stroke="#52b788" strokeWidth="1.2" opacity={0.5} />
+                  {/* Year label below */}
+                  <text
+                    x={Math.min(Math.max(p.x, 14), W - 14)}
+                    y={H - 1}
+                    className="sparkline-year-label"
+                    textAnchor="middle"
+                    fontSize="7"
+                    fill="#74c69d"
+                    fontFamily="JetBrains Mono, monospace"
+                  >
+                    {p.year}
+                  </text>
+                </>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+function SelectedSpeciesCard({
+  species,
+  onAnalyze,
+  year,
+  onYearChange,
+}: {
+  species: Species;
+  onAnalyze: () => void;
+  year: number;
+  onYearChange: (year: number) => void;
+}) {
   const { riskScore, loading } = useRiskScore(species.key);
-  const iucnColor = IUCN_STATUS_COLORS[species.iucnStatus] || '#71717a';
+  const iucnColor = IUCN_STATUS_COLORS[species.iucnStatus] || '#4d6b5c';
 
   return (
     <div className="selected-species-card">
@@ -77,7 +210,10 @@ function SelectedSpeciesCard({ species, onAnalyze }: { species: Species; onAnaly
           <h3 className="selected-species-name">{species.name}</h3>
           <p className="selected-species-scientific">{species.scientific}</p>
         </div>
-        <span className="iucn-badge" style={{ borderColor: `${iucnColor}44`, color: iucnColor, background: `${iucnColor}15` }}>
+        <span
+          className="iucn-badge"
+          style={{ borderColor: `${iucnColor}44`, color: iucnColor, background: `${iucnColor}14` }}
+        >
           {species.iucnStatus}
         </span>
       </div>
@@ -107,8 +243,8 @@ function SelectedSpeciesCard({ species, onAnalyze }: { species: Species; onAnaly
                 <span
                   className="risk-score-number"
                   style={{
-                    color: riskScore.score >= 70 ? '#ef4444' :
-                           riskScore.score >= 50 ? '#f59e0b' : '#10b981'
+                    color: riskScore.score >= 70 ? '#e63946' :
+                           riskScore.score >= 50 ? '#e9c46a' : '#52b788',
                   }}
                 >
                   {riskScore.score}/100
@@ -127,26 +263,18 @@ function SelectedSpeciesCard({ species, onAnalyze }: { species: Species; onAnaly
 
             <div className="species-stat full-width">
               <div className="stat-header-flex">
-                <span className="stat-label-sm">Occurrence Density (2000–2025)</span>
+                <span className="stat-label-sm">Occurrence Density 2000–2025</span>
                 <span className="stat-peak">Peak {riskScore.peakYear}</span>
               </div>
-              <div className="sparkline">
-                {riskScore.yearlyCounts.map((yd) => (
-                  <div
-                    key={yd.year}
-                    className="sparkline-bar"
-                    style={{
-                      height: `${Math.max(3, yd.normalized * 34)}px`,
-                      background: yd.normalized > 0.65
-                        ? '#10b981'
-                        : yd.normalized > 0.35
-                        ? '#f59e0b'
-                        : '#ef4444',
-                    }}
-                    title={`${yd.year}: ${yd.count.toLocaleString()} records`}
-                  />
-                ))}
-              </div>
+              <SparklineChart
+                yearlyCounts={riskScore.yearlyCounts}
+                peakYear={riskScore.peakYear}
+                activeYear={year}
+                onYearClick={onYearChange}
+              />
+              <p style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '2px', textAlign: 'center' }}>
+                Click any point to jump to that year
+              </p>
             </div>
           </>
         ) : null}
@@ -156,13 +284,13 @@ function SelectedSpeciesCard({ species, onAnalyze }: { species: Species; onAnaly
 
       <button className="analyze-button" onClick={onAnalyze}>
         <span>AI Deep Analysis</span>
-        <ChevronRight size={15} />
+        <ChevronRight size={14} />
       </button>
     </div>
   );
 }
 
-export function SpeciesPanel({ selected, onSelect, onAnalyze }: SpeciesPanelProps) {
+export function SpeciesPanel({ selected, onSelect, onAnalyze, year, onYearChange }: SpeciesPanelProps) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'list' | 'detail'>('list');
@@ -186,7 +314,7 @@ export function SpeciesPanel({ selected, onSelect, onAnalyze }: SpeciesPanelProp
           className={`mode-tab ${activeTab === 'list' ? 'active' : ''}`}
           onClick={() => setActiveTab('list')}
         >
-          <Layers size={14} />
+          <Layers size={13} />
           <span>Watch List</span>
           <span className="mode-badge">{WATCH_LIST.length}</span>
         </button>
@@ -194,27 +322,25 @@ export function SpeciesPanel({ selected, onSelect, onAnalyze }: SpeciesPanelProp
           className={`mode-tab ${activeTab === 'detail' ? 'active' : ''}`}
           onClick={() => setActiveTab('detail')}
         >
-          <BarChart2 size={14} />
-          <span>Species Analytics</span>
+          <BarChart2 size={13} />
+          <span>Analytics</span>
         </button>
       </div>
 
       {/* Mode 1: Full Species List */}
       {activeTab === 'list' && (
         <div className="panel-tab-content">
-          {/* Search bar */}
           <div className="species-search">
-            <Search size={14} />
+            <Search size={13} />
             <input
               type="text"
-              placeholder="Search species name or scientific..."
+              placeholder="Search species or scientific name…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="search-input"
             />
           </div>
 
-          {/* Filter pills */}
           <div className="filter-tabs">
             {['all', 'critical', 'threatened'].map(f => (
               <button
@@ -222,12 +348,11 @@ export function SpeciesPanel({ selected, onSelect, onAnalyze }: SpeciesPanelProp
                 className={`filter-tab ${filter === f ? 'active' : ''}`}
                 onClick={() => setFilter(f)}
               >
-                {f === 'all' ? 'All (20)' : f === 'critical' ? '🔴 Priority' : '⚠️ Threatened'}
+                {f === 'all' ? `All (${WATCH_LIST.length})` : f === 'critical' ? '🔴 Priority' : '⚠️ Threatened'}
               </button>
             ))}
           </div>
 
-          {/* Scrollable species list */}
           <div className="species-list-container">
             {filtered.map(species => (
               <button
@@ -260,9 +385,14 @@ export function SpeciesPanel({ selected, onSelect, onAnalyze }: SpeciesPanelProp
       {/* Mode 2: Detailed Analytics for Selected Species */}
       {activeTab === 'detail' && (
         <div className="panel-tab-content">
-          <SelectedSpeciesCard species={selected} onAnalyze={onAnalyze} />
+          <SelectedSpeciesCard
+            species={selected}
+            onAnalyze={onAnalyze}
+            year={year}
+            onYearChange={onYearChange}
+          />
           <button className="back-to-list-btn" onClick={() => setActiveTab('list')}>
-            ← Back to All Species
+            ← Back to Watch List
           </button>
         </div>
       )}

@@ -60,6 +60,8 @@ export default function App() {
             selected={selectedSpecies}
             onSelect={handleSpeciesSelect}
             onAnalyze={handleAnalyze}
+            year={year}
+            onYearChange={setYear}
           />
         </aside>
 
@@ -71,12 +73,12 @@ export default function App() {
           {/* Top Telemetry HUD Overlay */}
           <div className="telemetry-hud">
             <div className="hud-segment">
-              <span className="hud-label">MIGRATION YEAR</span>
+              <span className="hud-label">Migration Year</span>
               <span className="hud-value year">{year}</span>
             </div>
             <div className="hud-divider" />
-            <div className="hud-segment species-segment">
-              <span className="hud-label">TARGET SPECIES</span>
+            <div className="hud-segment">
+              <span className="hud-label">Target Species</span>
               <div className="hud-species-title">
                 <span className="hud-emoji">{selectedSpecies.emoji}</span>
                 <span className="hud-value name">{selectedSpecies.name}</span>
@@ -85,11 +87,11 @@ export default function App() {
             </div>
             <div className="hud-divider" />
             <div className="hud-segment">
-              <span className="hud-label">GLOBAL OCCURRENCES</span>
+              <span className="hud-label">Global Occurrences</span>
               <span className="hud-value count">
                 {loading ? (
                   <span className="hud-loading-text">
-                    <Loader2 size={12} className="spin-icon" /> Syncing GBIF...
+                    <Loader2 size={11} className="spin-icon" /> Syncing GBIF…
                   </span>
                 ) : (
                   `${(totalCount || points.length * 120).toLocaleString()} obs`
@@ -122,7 +124,7 @@ export default function App() {
               onClick={() => setAutoRotate(r => !r)}
               title="Toggle auto-rotation"
             >
-              {autoRotate ? '⏸ Pause Globe' : '▶ Rotate Globe'}
+              {autoRotate ? '⏸ Pause' : '▶ Rotate'}
             </button>
           </div>
         </div>
