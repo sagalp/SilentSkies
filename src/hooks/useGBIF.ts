@@ -17,14 +17,130 @@ interface UseGBIFReturn {
   totalCount: number;
 }
 
-// 3-tier ecological color scale matching the legend 1-to-1:
-// 🔴 Red #ef4444: Low Density (< 35%) = High Ecological Risk
-// 🟡 Amber #f59e0b: Moderate Density (35% - 70%) = Moderate Risk
-// 🟢 Emerald #10b981: High Density (>= 70%) = Healthy Population
-function weightToColor(weight: number): string {
-  if (weight < 0.35) return '#ef4444'; // Red = Low density / High risk
-  if (weight < 0.70) return '#f59e0b'; // Amber = Moderate density
-  return '#10b981';                   // Emerald = High density / Healthy
+// 3-tier ecological color scale:
+// 🟢 Emerald #52b788: High Density / Healthy Population
+// 🟡 Amber #e9c46a: Moderate Density Corridor
+// 🔴 Crimson #e63946: Low Density / High Ecological Risk
+export function weightToColor(weight: number): string {
+  if (weight >= 0.65) return '#52b788'; // Emerald
+  if (weight >= 0.35) return '#e9c46a'; // Amber
+  return '#e63946';                   // Crimson
+}
+
+const HABITAT_TYPES = [
+  'Wetland & Coastal Estuary',
+  'Grassland & Agricultural Margin',
+  'Temperate Mixed Forest',
+  'Boreal Woodland Corridor',
+  'Alpine & Sub-alpine Refuge',
+  'Riparian River Basin',
+  'Tropical Canopy & Savanna',
+  'Subtropical Marshland',
+];
+
+const PEAK_MONTHS = [
+  'April – May (Spring Passage)',
+  'May – June (Breeding Season Peak)',
+  'August – September (Autumn Migration)',
+  'September – October (Southward Corridor)',
+  'November – December (Winter Roosting)',
+];
+
+function inferHabitatType(lat: number, lng: number): string {
+  const hash = Math.abs(Math.sin(lat * 12.9898 + lng * 78.233) * 43758.5453);
+  const idx = Math.floor((hash - Math.floor(hash)) * HABITAT_TYPES.length);
+  return HABITAT_TYPES[idx];
+}
+
+function inferPeakMonth(lat: number): string {
+  if (lat > 40) return PEAK_MONTHS[1];
+  if (lat > 20) return PEAK_MONTHS[0];
+  if (lat > -20) return PEAK_MONTHS[2];
+  return PEAK_MONTHS[3];
+}
+
+/**
+ * Cluster raw geographic points into spatial grid cells (e.g. ~3.5° grid binning).
+ * Merges overlapping/nearby points so high-density areas combine into single green/amber glowing clusters
+ * instead of clipping redundant red dots!
+ */
+export function clusterRawPoints(
+  rawPoints: { lat: number; lng: number; count: number; locationName?: string }[],
+  speciesName: string,
+  year: number,
+  gridResolution = 3.5
+): GlobePoint[] {
+  if (rawPoints.length === 0) return [];
+
+  const grid = new Map<
+    string,
+    {
+      sumLat: number;
+      sumLng: number;
+      totalCount: number;
+      clusterSize: number;
+      locations: Set<string>;
+    }
+  >();
+
+  for (const pt of rawPoints) {
+    const gridLat = Math.floor(pt.lat / gridResolution) * gridResolution + gridResolution / 2;
+    const gridLng = Math.floor(pt.lng / gridResolution) * gridResolution + gridResolution / 2;
+    const key = `${gridLat.toFixed(1)},${gridLng.toFixed(1)}`;
+
+    if (!grid.has(key)) {
+      grid.set(key, {
+        sumLat: pt.lat * pt.count,
+        sumLng: pt.lng * pt.count,
+        totalCount: pt.count,
+        clusterSize: 1,
+        locations: new Set(pt.locationName ? [pt.locationName] : []),
+      });
+    } else {
+      const cell = grid.get(key)!;
+      cell.sumLat += pt.lat * pt.count;
+      cell.sumLng += pt.lng * pt.count;
+      cell.totalCount += pt.count;
+      cell.clusterSize += 1;
+      if (pt.locationName) cell.locations.add(pt.locationName);
+    }
+  }
+
+  const cells = Array.from(grid.values());
+  const maxCount = Math.max(...cells.map(c => c.totalCount), 1);
+
+  return cells.map((cell, idx) => {
+    const lat = Number((cell.sumLat / cell.totalCount).toFixed(2));
+    const lng = Number((cell.sumLng / cell.totalCount).toFixed(2));
+
+    // Sqrt scale makes dense & medium clusters prominent
+    const ratio = cell.totalCount / maxCount;
+    const weight = Number(Math.min(1.0, Math.max(0.15, Math.sqrt(ratio))).toFixed(2));
+
+    const color = weightToColor(weight);
+    const primaryLoc = Array.from(cell.locations)[0] ||
+      `${lat > 0 ? `${lat}°N` : `${Math.abs(lat)}°S`}, ${lng > 0 ? `${lng}°E` : `${Math.abs(lng)}°W`}`;
+
+    const riskRating =
+      weight >= 0.65 ? 'Healthy Corridor' :
+      weight >= 0.35 ? 'Moderate Density Watch' : 'Low Density / Vulnerable';
+
+    return {
+      id: `cluster-${year}-${idx}-${lat}-${lng}`,
+      lat,
+      lng,
+      weight,
+      rawCount: cell.totalCount,
+      clusterSize: cell.clusterSize,
+      species: speciesName,
+      locationName: primaryLoc,
+      year,
+      color,
+      habitatType: inferHabitatType(lat, lng),
+      peakMonth: inferPeakMonth(lat),
+      riskRating,
+    };
+  });
 }
 
 export function generateDemoPoints(taxonKey: string, year: number, speciesName = 'Migratory Bird'): GlobePoint[] {
@@ -35,72 +151,48 @@ export function generateDemoPoints(taxonKey: string, year: number, speciesName =
   };
 
   const isDecline = seed % 3 !== 0;
-  const declineFactor = isDecline ? Math.max(0.25, 1 - (year - 2000) * 0.018) : 1;
-  const numPoints = Math.round((90 + rng(0) * 140) * declineFactor);
+  const declineFactor = isDecline ? Math.max(0.3, 1 - (year - 2000) * 0.016) : 1;
+  const numRawPoints = Math.round((140 + rng(0) * 180) * declineFactor);
 
   const flyways = [
-    { name: 'Atlantic Americas Flyway', lat: 42, lng: -75, spread: 22 },
-    { name: 'Mississippi Flyway', lat: 36, lng: -90, spread: 24 },
-    { name: 'East Asian-Australasian Flyway', lat: 32, lng: 118, spread: 25 },
-    { name: 'East Atlantic Flyway', lat: 51, lng: 7, spread: 20 },
-    { name: 'Black Sea-Mediterranean Flyway', lat: 38, lng: 24, spread: 18 },
-    { name: 'Central Asian Flyway', lat: 48, lng: 68, spread: 22 },
+    { name: 'Atlantic Americas Corridor', lat: 42, lng: -75, spread: 18 },
+    { name: 'Mississippi Valley Flyway', lat: 36, lng: -90, spread: 20 },
+    { name: 'East Asian-Australasian Flyway', lat: 32, lng: 118, spread: 22 },
+    { name: 'East Atlantic European Flyway', lat: 51, lng: 7, spread: 16 },
+    { name: 'Black Sea-Mediterranean Flyway', lat: 38, lng: 24, spread: 15 },
+    { name: 'Central Asian Steppe Flyway', lat: 48, lng: 68, spread: 18 },
   ];
 
-  const points: GlobePoint[] = [];
-  for (let i = 0; i < numPoints; i++) {
+  const unclustered = [];
+  for (let i = 0; i < numRawPoints; i++) {
     const fw = flyways[Math.floor(rng(i * 3) * flyways.length)];
     const lat = Number((Math.max(-75, Math.min(75, fw.lat + (rng(i * 7) - 0.5) * fw.spread))).toFixed(2));
-    const lng = Number((fw.lng + (rng(i * 11) - 0.5) * fw.spread * 1.6).toFixed(2));
-    const weight = Number((0.25 + rng(i * 13) * 0.75).toFixed(2));
-    const rawCount = Math.round(weight * 850 + rng(i * 17) * 400);
+    const lng = Number((fw.lng + (rng(i * 11) - 0.5) * fw.spread * 1.5).toFixed(2));
+    const count = Math.round(40 + rng(i * 13) * 600);
 
-    points.push({
+    unclustered.push({
       lat,
       lng,
-      weight,
-      rawCount,
-      species: speciesName,
-      locationName: `${fw.name} (${lat > 0 ? `${lat}°N` : `${Math.abs(lat)}°S`}, ${lng > 0 ? `${lng}°E` : `${Math.abs(lng)}°W`})`,
-      year,
-      color: weightToColor(weight),
+      count,
+      locationName: `${fw.name} (${lat > 0 ? `${lat.toFixed(1)}°N` : `${Math.abs(lat).toFixed(1)}°S`}, ${lng > 0 ? `${lng.toFixed(1)}°E` : `${Math.abs(lng).toFixed(1)}°W`})`,
     });
   }
-  return points;
+
+  // Apply spatial grid clustering so close dots merge!
+  return clusterRawPoints(unclustered, speciesName, year, 3.8);
 }
 
 function mapToGlobePoints(occurrences: OccurrencePoint[], speciesName: string, year: number): GlobePoint[] {
   if (occurrences.length === 0) return [];
 
-  const grid = new Map<string, { lat: number; lng: number; count: number; country?: string; state?: string }>();
-  for (const o of occurrences) {
-    const gridLat = Math.round(o.lat * 1.5) / 1.5;
-    const gridLng = Math.round(o.lng * 1.5) / 1.5;
-    const key = `${gridLat},${gridLng}`;
-    if (grid.has(key)) {
-      grid.get(key)!.count += o.count || 1;
-    } else {
-      grid.set(key, { lat: gridLat, lng: gridLng, count: o.count || 1, country: o.country, state: o.stateProvince });
-    }
-  }
+  const rawMapped = occurrences.map(o => ({
+    lat: o.lat,
+    lng: o.lng,
+    count: o.count || 1,
+    locationName: [o.stateProvince, o.country].filter(Boolean).join(', '),
+  }));
 
-  const cells = Array.from(grid.values());
-  const maxCount = Math.max(...cells.map(c => c.count), 1);
-
-  return cells.map(c => {
-    const weight = Number((c.count / maxCount).toFixed(2));
-    const loc = [c.state, c.country].filter(Boolean).join(', ') || `${c.lat > 0 ? `${c.lat}°N` : `${Math.abs(c.lat)}°S`}, ${c.lng > 0 ? `${c.lng}°E` : `${Math.abs(c.lng)}°W`}`;
-    return {
-      lat: c.lat,
-      lng: c.lng,
-      weight,
-      rawCount: c.count,
-      species: speciesName,
-      locationName: loc,
-      year,
-      color: weightToColor(weight),
-    };
-  });
+  return clusterRawPoints(rawMapped, speciesName, year, 3.2);
 }
 
 export function useGBIF({ taxonKey, year, limit = 400 }: UseGBIFOptions): UseGBIFReturn {

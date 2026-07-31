@@ -105,6 +105,7 @@ export default function App() {
             selectedSpeciesName={selectedSpecies.name}
             onGlobeClick={handleGlobeClick}
             onPointClick={handlePointClick}
+            onOpenAnalysis={handleAnalyze}
             autoRotate={autoRotate}
           />
 

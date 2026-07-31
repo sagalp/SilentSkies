@@ -76,6 +76,7 @@ export interface GBIFRecord {
 }
 
 export interface GlobePoint {
+  id?: string;
   lat: number;
   lng: number;
   weight: number;
@@ -84,6 +85,11 @@ export interface GlobePoint {
   color?: string;
   locationName?: string;
   year?: number;
+  clusterSize?: number;
+  habitatType?: string;
+  peakMonth?: string;
+  regionName?: string;
+  riskRating?: string;
 }
 
 export interface RegionClick {
