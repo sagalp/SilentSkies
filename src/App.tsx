@@ -8,20 +8,23 @@ import { Navbar } from './components/Navbar';
 import { useGBIF } from './hooks/useGBIF';
 import { WATCH_LIST } from './data/watchlist';
 import type { Species, GlobePoint } from './types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Navigation } from 'lucide-react';
 import './App.css';
 
 type SidePanel = 'none' | 'analysis' | 'action';
 
 export default function App() {
   const [year, setYear] = useState(2020);
+  const [month, setMonth] = useState<number | undefined>(undefined);
   const [selectedSpecies, setSelectedSpecies] = useState<Species>(WATCH_LIST[0]);
   const [sidePanel, setSidePanel] = useState<SidePanel>('none');
   const [autoRotate, setAutoRotate] = useState(true);
+  const [showRoutes, setShowRoutes] = useState(true);
 
   const { points, loading, totalCount } = useGBIF({
     taxonKey: selectedSpecies.key,
     year,
+    month,
     limit: 400,
   });
 
@@ -44,6 +47,8 @@ export default function App() {
   const handleAction = useCallback(() => {
     setSidePanel('action');
   }, []);
+
+  const monthLabel = month ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month - 1] : undefined;
 
   return (
     <div className="app">
@@ -74,7 +79,9 @@ export default function App() {
           <div className="telemetry-hud">
             <div className="hud-segment">
               <span className="hud-label">Migration Year</span>
-              <span className="hud-value year">{year}</span>
+              <span className="hud-value year">
+                {year}{monthLabel ? ` · ${monthLabel}` : ''}
+              </span>
             </div>
             <div className="hud-divider" />
             <div className="hud-segment">
@@ -107,13 +114,16 @@ export default function App() {
             onPointClick={handlePointClick}
             onOpenAnalysis={handleAnalyze}
             autoRotate={autoRotate}
+            showRoutes={showRoutes}
           />
 
           {/* Time Slider Controls Overlay */}
           <div className="time-slider-overlay">
             <TimeSlider
               year={year}
+              month={month}
               onChange={setYear}
+              onMonthChange={setMonth}
               loading={loading}
             />
           </div>
@@ -126,6 +136,15 @@ export default function App() {
               title="Toggle auto-rotation"
             >
               {autoRotate ? '⏸ Pause' : '▶ Rotate'}
+            </button>
+            <button
+              className={`rotate-btn ${showRoutes ? 'active' : ''}`}
+              onClick={() => setShowRoutes(r => !r)}
+              title="Toggle migration routes"
+              style={{ display: 'flex', alignItems: 'center', gap: 5 }}
+            >
+              <Navigation size={11} />
+              {showRoutes ? 'Routes On' : 'Routes Off'}
             </button>
           </div>
         </div>

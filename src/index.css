@@ -437,6 +437,10 @@ html, body, #root {
   top: 14px;
   right: 14px;
   z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
 }
 
 .rotate-btn {
@@ -465,30 +469,38 @@ html, body, #root {
 }
 
 /* ═══════════════════════════════════════════════════════
-   POINT CLUSTER INSPECTOR MODAL OVERLAY
+   POINT CLUSTER INSPECTOR — SIDE-BY-SIDE PANEL (No Blur)
    ═══════════════════════════════════════════════════════ */
-.point-inspector-card {
+.point-inspector-side-container {
   position: absolute;
-  bottom: 80px;
-  right: 20px;
-  width: min(340px, 90vw);
-  max-height: 80vh;
-  z-index: 40;
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
+  width: min(370px, 88vw);
+  z-index: 30;
+  pointer-events: auto;
   display: flex;
   flex-direction: column;
-  background: rgba(7, 17, 26, 0.94);
-  border: 1px solid var(--border-active);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-radius: 16px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(82, 183, 136, 0.15);
-  animation: inspectorPop 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
+  animation: inspectorSlideRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes inspectorPop {
-  0% { opacity: 0; transform: translateY(12px) scale(0.97); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes inspectorSlideRight {
+  from { opacity: 0; transform: translateX(28px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.point-inspector-card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: rgba(7, 17, 26, 0.95);
+  border: 1px solid var(--border-active);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 18px;
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.75), 0 0 25px rgba(82, 183, 136, 0.12);
+  overflow: hidden;
 }
 
 .inspector-header {
@@ -535,8 +547,10 @@ html, body, #root {
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 11px;
   overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .inspector-status-banner {
@@ -652,6 +666,29 @@ html, body, #root {
   transition: all 0.2s ease;
   font-family: 'Space Grotesk', sans-serif;
   margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* ── Inspector Route Section ─────────────────────────── */
+.inspector-route-section {
+  background: rgba(72, 202, 228, 0.05);
+  border: 1px solid rgba(72, 202, 228, 0.18);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.inspector-route-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--sky);
+  margin-top: 4px;
+}
+
+.inspector-route-hint {
+  font-size: 9.5px;
+  color: var(--green-bright);
+  margin-top: 3px;
+  font-weight: 600;
 }
 
 .inspector-action-btn:hover {
@@ -661,14 +698,14 @@ html, body, #root {
 }
 
 /* ═══════════════════════════════════════════════════════
-   TIME SLIDER  (compact)
+   TIME SLIDER + MONTH PICKER
    ═══════════════════════════════════════════════════════ */
 .time-slider-overlay {
   position: absolute;
   bottom: 18px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(440px, 88%);
+  width: min(500px, 90%);
   z-index: 20;
 }
 
@@ -766,13 +803,151 @@ html, body, #root {
 
 .milestone-tick.active { color: var(--green-bright); }
 
+/* ── Month Filter Row ────────────────────────────────── */
+.time-month-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 7px;
+  border-top: 1px solid var(--border-dim);
+  margin-top: 2px;
+  position: relative;
+}
+
+.time-month-label-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.time-month-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.time-season-badge {
+  font-size: 9px;
+  font-weight: 700;
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 1px 6px;
+}
+
+.time-month-picker-wrap {
+  position: relative;
+}
+
+.time-month-select-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+  padding: 4px 9px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.time-month-select-btn:hover {
+  border-color: var(--border-active);
+  color: var(--green-bright);
+}
+
+.time-month-chevron {
+  transition: transform 0.2s ease;
+}
+.time-month-chevron.open { transform: rotate(180deg); }
+
+.time-month-dropdown {
+  position: absolute;
+  bottom: calc(100% + 7px);
+  right: 0;
+  width: 200px;
+  background: rgba(7, 17, 26, 0.98);
+  border: 1px solid var(--border-active);
+  border-radius: 12px;
+  padding: 6px;
+  z-index: 50;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.8), 0 0 20px rgba(82,183,136,0.1);
+  backdrop-filter: blur(20px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  max-height: 240px;
+  overflow-y: auto;
+  animation: dropdownPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dropdownPop {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.time-month-option {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 5px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Space Grotesk', sans-serif;
+  text-align: left;
+  white-space: nowrap;
+  justify-content: flex-start;
+}
+
+.time-month-option:first-child {
+  grid-column: 1 / -1;
+}
+
+.time-month-option:hover {
+  background: rgba(82, 183, 136, 0.07);
+  color: var(--text-primary);
+  border-color: var(--border-glass);
+}
+
+.time-month-option.active {
+  background: rgba(82, 183, 136, 0.13);
+  border-color: var(--border-active);
+  color: var(--green-bright);
+}
+
+.month-option-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.month-option-season {
+  font-size: 9px;
+  font-weight: 700;
+  margin-left: auto;
+  opacity: 0.8;
+}
+
 .time-slider-legend {
   display: flex;
   gap: 12px;
   align-items: center;
   justify-content: center;
-  margin-top: 5px;
-  padding-top: 5px;
+  margin-top: 6px;
+  padding-top: 6px;
   border-top: 1px solid var(--border-dim);
 }
 
@@ -2057,3 +2232,14 @@ html, body, #root {
   text-align: center;
   border-top: 1px solid var(--border-dim);
 }
+
+/* ─── Globe Scene Tooltip Override ───────────────────── */
+.scene-tooltip {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+  z-index: 9999 !important;
+}
+
