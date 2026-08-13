@@ -11,8 +11,10 @@ interface GlobeViewProps {
   selectedSpeciesName: string;
   onGlobeClick?: (lat: number, lng: number) => void;
   onPointClick?: (point: GlobePoint) => void;
-  onOpenAnalysis?: () => void;
+  onOpenAnalysis?: (point?: GlobePoint) => void;
   autoRotate?: boolean;
+  autoRotateSpeed?: number;
+  showAtmosphere?: boolean;
   showRoutes?: boolean;
 }
 
@@ -42,6 +44,8 @@ export function GlobeView({
   onPointClick,
   onOpenAnalysis,
   autoRotate = true,
+  autoRotateSpeed = 1,
+  showAtmosphere = true,
   showRoutes = true,
 }: GlobeViewProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -73,10 +77,10 @@ export function GlobeView({
     if (!globeRef.current) return;
     const ctrl = globeRef.current.controls();
     ctrl.autoRotate = autoRotate && !activePoint;
-    ctrl.autoRotateSpeed = 0.4;
+    ctrl.autoRotateSpeed = autoRotateSpeed * 0.4;
     ctrl.enableDamping = true;
     ctrl.dampingFactor = 0.08;
-  }, [autoRotate, activePoint]);
+  }, [autoRotate, autoRotateSpeed, activePoint]);
 
   useEffect(() => {
     if (!globeRef.current) return;
@@ -270,7 +274,7 @@ export function GlobeView({
         globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
         bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
         atmosphereColor="#52b788"
-        atmosphereAltitude={0.15}
+        atmosphereAltitude={showAtmosphere ? 0.15 : 0}
         backgroundColor="rgba(0,0,0,0)"
 
         // Smooth 300ms transitions on data update (no unmounting, camera & zoom stay 100% steady)
@@ -487,7 +491,7 @@ export function GlobeView({
               {onOpenAnalysis && (
                 <button
                   className="inspector-action-btn"
-                  onClick={() => { setActivePoint(null); onOpenAnalysis(); }}
+                  onClick={() => { const pt = activePoint; setActivePoint(null); onOpenAnalysis(pt); }}
                 >
                   <span>Run AI Deep Analysis on this Region</span>
                   <ChevronRight size={14} />

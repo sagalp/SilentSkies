@@ -13,6 +13,8 @@ const MIGRATION_SEASONS = [
   { label: 'Winter Roost',     months: [11, 12, 1], color: '#48cae4' },
 ];
 
+import { playSliderTick } from '../utils/audio';
+
 interface TimeSliderProps {
   year: number;
   month?: number; // undefined = all year
@@ -21,6 +23,8 @@ interface TimeSliderProps {
   onChange: (year: number) => void;
   onMonthChange?: (month: number | undefined) => void;
   loading?: boolean;
+  uiSounds?: boolean;
+  uiVolume?: number;
 }
 
 const MILESTONE_YEARS = [2000, 2005, 2010, 2015, 2020, 2025];
@@ -33,20 +37,25 @@ export function TimeSlider({
   onChange,
   onMonthChange,
   loading = false,
+  uiSounds = true,
+  uiVolume = 0.35,
 }: TimeSliderProps) {
   const [showMonthPicker, setShowMonthPicker] = useState(false);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      onChange(Number(e.target.value));
+      const val = Number(e.target.value);
+      onChange(val);
+      playSliderTick(uiSounds, uiVolume);
     },
-    [onChange]
+    [onChange, uiSounds, uiVolume]
   );
 
   const handleMonthSelect = useCallback((m: number | undefined) => {
     onMonthChange?.(m);
     setShowMonthPicker(false);
-  }, [onMonthChange]);
+    playSliderTick(uiSounds, uiVolume);
+  }, [onMonthChange, uiSounds, uiVolume]);
 
   const progress = ((year - minYear) / (maxYear - minYear)) * 100;
 
@@ -81,7 +90,7 @@ export function TimeSlider({
             <button
               key={y}
               className={`milestone-tick ${year === y ? 'active' : ''}`}
-              onClick={() => onChange(y)}
+              onClick={() => { onChange(y); playSliderTick(uiSounds, uiVolume); }}
               title={`Jump to ${y}`}
             >
               {y}

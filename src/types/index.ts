@@ -7,6 +7,7 @@ export interface Species {
   watchPriority: 'critical' | 'high' | 'medium' | 'low';
   nativeRegions: string[];
   emoji: string;
+  speciesGroup: string; // ecological/taxonomic group for browser UI
 }
 
 export type IUCNStatus =

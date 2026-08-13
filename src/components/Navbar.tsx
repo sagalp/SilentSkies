@@ -1,13 +1,14 @@
 import logoUrl from '/logo.png';
-import { ShieldCheck, Heart } from 'lucide-react';
+import { ShieldCheck, Heart, Settings } from 'lucide-react';
 
 interface NavbarProps {
   totalObservations: number;
   loading: boolean;
   onOpenAction: () => void;
+  onOpenSettings: () => void;
 }
 
-export function Navbar({ totalObservations, loading, onOpenAction }: NavbarProps) {
+export function Navbar({ totalObservations, loading, onOpenAction, onOpenSettings }: NavbarProps) {
   return (
     <nav className="navbar">
       <div className="navbar-brand">
@@ -41,6 +42,10 @@ export function Navbar({ totalObservations, loading, onOpenAction }: NavbarProps
         <button className="navbar-action-btn" onClick={onOpenAction}>
           <Heart size={13} />
           <span>Take Action</span>
+        </button>
+
+        <button className="navbar-settings-btn" onClick={onOpenSettings} title="System Settings">
+          <Settings size={15} className="settings-btn-gear" />
         </button>
       </div>
     </nav>

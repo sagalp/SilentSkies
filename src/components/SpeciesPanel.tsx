@@ -2,16 +2,19 @@ import { useState } from 'react';
 import {
   Search, AlertTriangle, TrendingDown, TrendingUp, Minus,
   ChevronRight, Layers, BarChart2, CheckCircle2, ShieldAlert,
-  Compass, Loader2,
+  Compass, Loader2, BookOpen,
 } from 'lucide-react';
 import type { Species, IntelligenceAlert } from '../types';
 import { useRiskScore } from '../hooks/useRiskScore';
-import { WATCH_LIST, IUCN_STATUS_LABELS, IUCN_STATUS_COLORS, PRIORITY_COLORS } from '../data/watchlist';
+import { IUCN_STATUS_LABELS, IUCN_STATUS_COLORS, PRIORITY_COLORS } from '../data/watchlist';
+import { getBirdIcon, GROUP_COLORS } from './BirdIcons';
 
 interface SpeciesPanelProps {
   selected: Species;
+  watchList: Species[];
   onSelect: (species: Species) => void;
   onAnalyze: () => void;
+  onOpenBrowser: () => void;
   year: number;
   onYearChange: (year: number) => void;
 }
@@ -85,13 +88,11 @@ function SparklineChart({
 }) {
   const W = 260;
   const H = 48;
-  const PAD_B = 14; // bottom padding for year label
+  const PAD_B = 14;
   const chartH = H - PAD_B;
-
   const n = yearlyCounts.length;
   const barW = n > 0 ? W / n : 10;
 
-  // Build SVG path for the line + area
   const pts = yearlyCounts.map((yd, i) => {
     const x = i * barW + barW / 2;
     const y = chartH - Math.max(2, yd.normalized * (chartH - 4));
@@ -122,62 +123,28 @@ function SparklineChart({
             <stop offset="100%" stopColor="#52b788" />
           </linearGradient>
         </defs>
-
-        {/* Area fill */}
         {areaD && <path d={areaD} fill="url(#spark-grad)" />}
-
-        {/* Line */}
         {pathD && (
-          <path
-            d={pathD}
-            fill="none"
-            stroke="url(#spark-line-grad)"
-            strokeWidth="1.5"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
+          <path d={pathD} fill="none" stroke="url(#spark-line-grad)"
+            strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
         )}
-
-        {/* Active year dot + ring */}
         {pts.map((p) => {
           const isActive = p.year === activeYear;
           const isPeak = p.year === peakYear;
           return (
             <g key={p.year}>
-              {/* Hit area per bar column */}
-              <rect
-                x={p.x - barW / 2}
-                y={0}
-                width={barW}
-                height={chartH}
-                className="sparkline-hit-area"
-                onClick={() => onYearClick(p.year)}
-              >
+              <rect x={p.x - barW / 2} y={0} width={barW} height={chartH}
+                className="sparkline-hit-area" onClick={() => onYearClick(p.year)}>
                 <title>{p.year}: {p.count.toLocaleString()} records — click to jump</title>
               </rect>
-
-              {/* Peak year marker */}
-              {isPeak && !isActive && (
-                <circle cx={p.x} cy={p.y} r={3} fill="#e9c46a" opacity={0.8} />
-              )}
-
-              {/* Active year indicator */}
+              {isPeak && !isActive && <circle cx={p.x} cy={p.y} r={3} fill="#e9c46a" opacity={0.8} />}
               {isActive && (
                 <>
                   <circle cx={p.x} cy={p.y} r={4} fill="#52b788" />
                   <circle cx={p.x} cy={p.y} r={7} fill="none" stroke="#52b788" strokeWidth="1.2" opacity={0.5} />
-                  {/* Year label below */}
-                  <text
-                    x={Math.min(Math.max(p.x, 14), W - 14)}
-                    y={H - 1}
-                    className="sparkline-year-label"
-                    textAnchor="middle"
-                    fontSize="7"
-                    fill="#74c69d"
-                    fontFamily="JetBrains Mono, monospace"
-                  >
-                    {p.year}
-                  </text>
+                  <text x={Math.min(Math.max(p.x, 14), W - 14)} y={H - 1}
+                    className="sparkline-year-label" textAnchor="middle" fontSize="7"
+                    fill="#74c69d" fontFamily="JetBrains Mono, monospace">{p.year}</text>
                 </>
               )}
             </g>
@@ -188,6 +155,7 @@ function SparklineChart({
   );
 }
 
+/* ─── Analytics card for selected species ────────────── */
 function SelectedSpeciesCard({
   species,
   onAnalyze,
@@ -201,19 +169,21 @@ function SelectedSpeciesCard({
 }) {
   const { riskScore, loading } = useRiskScore(species.key);
   const iucnColor = IUCN_STATUS_COLORS[species.iucnStatus] || '#4d6b5c';
+  const BirdIcon = getBirdIcon(species.speciesGroup);
+  const groupColor = GROUP_COLORS[species.speciesGroup] ?? '#52b788';
 
   return (
     <div className="selected-species-card">
       <div className="selected-species-header">
-        <span className="selected-species-emoji">{species.emoji}</span>
+        <span className="selected-species-svg-icon" style={{ color: groupColor }} title={species.speciesGroup}>
+          <BirdIcon size={34} color={groupColor} />
+        </span>
         <div className="selected-species-info">
           <h3 className="selected-species-name">{species.name}</h3>
           <p className="selected-species-scientific">{species.scientific}</p>
         </div>
-        <span
-          className="iucn-badge"
-          style={{ borderColor: `${iucnColor}44`, color: iucnColor, background: `${iucnColor}14` }}
-        >
+        <span className="iucn-badge"
+          style={{ borderColor: `${iucnColor}44`, color: iucnColor, background: `${iucnColor}14` }}>
           {species.iucnStatus}
         </span>
       </div>
@@ -240,13 +210,10 @@ function SelectedSpeciesCard({
             <div className="species-stat">
               <span className="stat-label-sm">Ecological Risk</span>
               <span className="stat-value-sm risk-score-display">
-                <span
-                  className="risk-score-number"
-                  style={{
-                    color: riskScore.score >= 70 ? '#e63946' :
-                           riskScore.score >= 50 ? '#e9c46a' : '#52b788',
-                  }}
-                >
+                <span className="risk-score-number" style={{
+                  color: riskScore.score >= 70 ? '#e63946' :
+                         riskScore.score >= 50 ? '#e9c46a' : '#52b788',
+                }}>
                   {riskScore.score}/100
                 </span>
                 <span className="risk-label">{riskScore.label}</span>
@@ -256,11 +223,9 @@ function SelectedSpeciesCard({
               <span className="stat-label-sm">10-Yr Trend</span>
               <span className="stat-value-sm trend-display">
                 <TrendIcon trend={riskScore.trend} />
-                {riskScore.percentChange > 0 ? '+' : ''}
-                {riskScore.percentChange}%
+                {riskScore.percentChange > 0 ? '+' : ''}{riskScore.percentChange}%
               </span>
             </div>
-
             <div className="species-stat full-width">
               <div className="stat-header-flex">
                 <span className="stat-label-sm">Occurrence Density 2000–2025</span>
@@ -290,12 +255,15 @@ function SelectedSpeciesCard({
   );
 }
 
-export function SpeciesPanel({ selected, onSelect, onAnalyze, year, onYearChange }: SpeciesPanelProps) {
+/* ─── Main SpeciesPanel ─────────────────────────────── */
+export function SpeciesPanel({
+  selected, watchList, onSelect, onAnalyze, onOpenBrowser, year, onYearChange,
+}: SpeciesPanelProps) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'list' | 'detail'>('list');
 
-  const filtered = WATCH_LIST.filter(s => {
+  const filtered = watchList.filter(s => {
     const matchSearch =
       s.name.toLowerCase().includes(search.toLowerCase()) ||
       s.scientific.toLowerCase().includes(search.toLowerCase());
@@ -316,7 +284,7 @@ export function SpeciesPanel({ selected, onSelect, onAnalyze, year, onYearChange
         >
           <Layers size={13} />
           <span>Watch List</span>
-          <span className="mode-badge">{WATCH_LIST.length}</span>
+          <span className="mode-badge">{watchList.length}</span>
         </button>
         <button
           className={`mode-tab ${activeTab === 'detail' ? 'active' : ''}`}
@@ -327,14 +295,21 @@ export function SpeciesPanel({ selected, onSelect, onAnalyze, year, onYearChange
         </button>
       </div>
 
-      {/* Mode 1: Full Species List */}
+      {/* Watch List tab */}
       {activeTab === 'list' && (
         <div className="panel-tab-content">
+          {/* Browse button */}
+          <button className="browse-birds-btn" onClick={onOpenBrowser}>
+            <BookOpen size={13} />
+            <span>Browse All Birds</span>
+            <span className="browse-birds-hint">Customize list</span>
+          </button>
+
           <div className="species-search">
             <Search size={13} />
             <input
               type="text"
-              placeholder="Search species or scientific name…"
+              placeholder="Search watch list…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="search-input"
@@ -348,41 +323,48 @@ export function SpeciesPanel({ selected, onSelect, onAnalyze, year, onYearChange
                 className={`filter-tab ${filter === f ? 'active' : ''}`}
                 onClick={() => setFilter(f)}
               >
-                {f === 'all' ? `All (${WATCH_LIST.length})` : f === 'critical' ? '🔴 Priority' : '⚠️ Threatened'}
+                {f === 'all' ? `All (${watchList.length})` : f === 'critical' ? '🔴 Priority' : '⚠️ Threatened'}
               </button>
             ))}
           </div>
 
           <div className="species-list-container">
-            {filtered.map(species => (
-              <button
-                key={species.key}
-                className={`species-item ${selected.key === species.key ? 'active' : ''}`}
-                onClick={() => {
-                  onSelect(species);
-                  setActiveTab('detail');
-                }}
-              >
-                <span className="species-item-emoji">{species.emoji}</span>
-                <div className="species-item-info">
-                  <span className="species-item-name">{species.name}</span>
-                  <span className="species-item-sci">{species.scientific}</span>
-                </div>
-                <div className="species-item-right">
-                  <span
-                    className="priority-dot"
-                    style={{ background: PRIORITY_COLORS[species.watchPriority] }}
-                    title={`${species.watchPriority} priority`}
-                  />
-                  <RiskBadge taxonKey={species.key} />
-                </div>
-              </button>
-            ))}
+            {filtered.length === 0 ? (
+              <div style={{ padding: '20px 12px', color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center' }}>
+                No species match. <button style={{ background: 'none', border: 'none', color: 'var(--green-mid)', cursor: 'pointer', fontSize: '12px' }} onClick={onOpenBrowser}>Browse all birds →</button>
+              </div>
+            ) : (
+              filtered.map(species => {
+                const BirdIcon = getBirdIcon(species.speciesGroup);
+                const groupColor = GROUP_COLORS[species.speciesGroup] ?? '#52b788';
+                return (
+                  <button
+                    key={species.key}
+                    className={`species-item ${selected.key === species.key ? 'active' : ''}`}
+                    onClick={() => { onSelect(species); setActiveTab('detail'); }}
+                  >
+                    <span className="species-item-svg-icon" style={{ color: groupColor }}>
+                      <BirdIcon size={20} color={selected.key === species.key ? groupColor : 'var(--text-muted)'} />
+                    </span>
+                    <div className="species-item-info">
+                      <span className="species-item-name">{species.name}</span>
+                      <span className="species-item-sci">{species.scientific}</span>
+                    </div>
+                    <div className="species-item-right">
+                      <span className="priority-dot"
+                        style={{ background: PRIORITY_COLORS[species.watchPriority] }}
+                        title={`${species.watchPriority} priority`} />
+                      <RiskBadge taxonKey={species.key} />
+                    </div>
+                  </button>
+                );
+              })
+            )}
           </div>
         </div>
       )}
 
-      {/* Mode 2: Detailed Analytics for Selected Species */}
+      {/* Analytics tab */}
       {activeTab === 'detail' && (
         <div className="panel-tab-content">
           <SelectedSpeciesCard
