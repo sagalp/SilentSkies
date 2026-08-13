@@ -70,6 +70,47 @@ export function playSliderTick(enabled: boolean = true, volume: number = 0.35) {
   }
 }
 
+/**
+ * Plays a sci-fi radar-ping sound when a globe beacon / occurrence point is selected.
+ * Two-tone rising sweep with a reverb-like tail to feel "spatial" and atmospheric.
+ */
+export function playBeaconClick(enabled: boolean = true, volume: number = 0.35) {
+  if (!enabled || volume <= 0) return;
+  try {
+    const ctx = getAudioContext();
+    const v = Math.min(Math.max(volume, 0.01), 1.0);
+
+    // Primary rising sweep
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(260, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(920, ctx.currentTime + 0.12);
+    gain1.gain.setValueAtTime(v * 0.28, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.22);
+
+    // Echo harmonic (delayed, softer)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(520, ctx.currentTime + 0.08);
+    osc2.frequency.exponentialRampToValueAtTime(1840, ctx.currentTime + 0.22);
+    gain2.gain.setValueAtTime(0.001, ctx.currentTime);
+    gain2.gain.linearRampToValueAtTime(v * 0.12, ctx.currentTime + 0.09);
+    gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.32);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(ctx.currentTime + 0.07);
+    osc2.stop(ctx.currentTime + 0.32);
+  } catch (e) {
+    // Ignore audio autoplay restrictions
+  }
+}
+
 /** Starts or stops the ambient wind breeze soundscape */
 export function updateAmbientSound(enabled: boolean, volume: number) {
   try {

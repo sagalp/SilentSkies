@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import type { GlobePoint } from '../types';
 import { X, ChevronRight, Compass, ShieldCheck, MapPin, Activity, Layers, Calendar, Navigation } from 'lucide-react';
 import { MIGRATION_FLYWAYS, type MigrationArc } from '../hooks/useGBIF';
+import { playBeaconClick } from '../utils/audio';
 
 
 interface GlobeViewProps {
@@ -16,6 +17,8 @@ interface GlobeViewProps {
   autoRotateSpeed?: number;
   showAtmosphere?: boolean;
   showRoutes?: boolean;
+  uiSounds?: boolean;
+  uiVolume?: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,6 +50,8 @@ export function GlobeView({
   autoRotateSpeed = 1,
   showAtmosphere = true,
   showRoutes = true,
+  uiSounds = true,
+  uiVolume = 0.35,
 }: GlobeViewProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const globeRef = useRef<any>(null);
@@ -91,12 +96,13 @@ export function GlobeView({
     (pt: GlobePoint) => {
       setActivePoint(pt);
       onPointClick?.(pt);
+      playBeaconClick(uiSounds, uiVolume);
       if (globeRef.current && pt.lat != null && pt.lng != null) {
         // Offset longitude slightly (-12deg) so the dot stays centered in the globe space to the left of the side panel
         globeRef.current.pointOfView({ lat: pt.lat, lng: pt.lng - 12, altitude: 1.35 }, 1000);
       }
     },
-    [onPointClick]
+    [onPointClick, uiSounds, uiVolume]
   );
 
   const handleCanvasClick = useCallback(

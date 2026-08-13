@@ -240,6 +240,8 @@ export default function App() {
             autoRotateSpeed={settings.autoRotateSpeed}
             showAtmosphere={settings.showAtmosphere}
             showRoutes={settings.showRoutes}
+            uiSounds={settings.uiSounds}
+            uiVolume={settings.uiVolume}
           />
 
           {/* Time Slider Controls Overlay */}

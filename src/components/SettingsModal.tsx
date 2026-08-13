@@ -521,7 +521,7 @@ export function SettingsModal({
         <footer className="settings-footer">
           <div className="settings-footer-left">
             <ShieldCheck size={14} style={{ color: 'var(--green-bright)' }} />
-            <span>SilentSkies v3.0 · All settings auto-saved</span>
+            <span>SilentSkies v3.1 · All settings auto-saved</span>
           </div>
           <button className="settings-done-btn" onClick={onClose}>
             <Check size={14} />
