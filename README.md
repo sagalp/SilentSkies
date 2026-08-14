@@ -59,8 +59,7 @@ npm install
 Create a `.env` file in the `SilentSkies/` directory:
 
 ```env
-VITE_OPENAI_API_KEY=your_api_key_here
-VITE_OPENAI_BASE_URL=https://api.anthropic.com/v1   # or your preferred endpoint
+VITE_NVIDIA_API_KEY=your_api_key_here
 ```
 
 > **Note**: The GBIF Occurrence API requires no API key. All occurrence data is fetched directly from the public GBIF endpoint.
