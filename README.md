@@ -30,7 +30,7 @@ SilentSkies is an interactive 3D globe application that tracks global bird occur
 | **Charts** | D3.js |
 | **Icons** | Lucide React |
 | **Occurrence Data** | [GBIF Occurrence API](https://www.gbif.org/developer/occurrence) |
-| **AI Analysis** | OpenAI-compatible SDK → Claude (Anthropic) |
+| **AI Analysis** | Nvidia NIM |
 | **Audio** | Web Audio API (ambient soundscape + UI click sounds) |
 | **Linting** | OxLint |
 
