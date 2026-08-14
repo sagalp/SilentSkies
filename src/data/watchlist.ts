@@ -5,6 +5,17 @@ import type { Species } from '../types';
 export const WATCH_LIST: Species[] = [
   // ── 1-10 ──
   {
+    key: '2492462',
+    name: 'European Robin',
+    scientific: 'Erithacus rubecula',
+    family: 'Muscicapidae',
+    iucnStatus: 'LC',
+    watchPriority: 'medium',
+    nativeRegions: ['Europe', 'North Africa', 'Western Asia'],
+    emoji: '🐦',
+    speciesGroup: 'Passerines',
+  },
+  {
     key: '9515886',
     name: 'Barn Swallow',
     scientific: 'Hirundo rustica',

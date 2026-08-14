@@ -24,13 +24,19 @@ const WATCHLIST_STORAGE_KEY = 'silentskies_watchlist_keys';
 const SETTINGS_STORAGE_KEY = 'silentskies_settings';
 
 function getInitialWatchList(): Species[] {
+  const robin = WATCH_LIST.find(s => s.name === 'European Robin') || WATCH_LIST[0];
   try {
     const saved = localStorage.getItem(WATCHLIST_STORAGE_KEY);
     if (saved) {
       const keys: string[] = JSON.parse(saved);
       if (Array.isArray(keys) && keys.length > 0) {
         const list = WATCH_LIST.filter(s => keys.includes(s.key));
-        if (list.length > 0) return list;
+        if (list.length > 0) {
+          if (robin && !list.some(s => s.key === robin.key)) {
+            return [robin, ...list];
+          }
+          return list;
+        }
       }
     }
   } catch (e) {
@@ -57,7 +63,11 @@ export default function App() {
   const [month, setMonth] = useState<number | undefined>(undefined);
   // User-curated watch list (loaded from localStorage or default first 5)
   const [watchList, setWatchList] = useState<Species[]>(getInitialWatchList);
-  const [selectedSpecies, setSelectedSpecies] = useState<Species>(() => watchList[0] || WATCH_LIST[0]);
+  const [selectedSpecies, setSelectedSpecies] = useState<Species>(() => {
+    const robin = WATCH_LIST.find(s => s.name === 'European Robin');
+    if (robin) return robin;
+    return watchList[0] || WATCH_LIST[0];
+  });
   const [sidePanel, setSidePanel] = useState<SidePanel>('none');
   const [autoRotate, setAutoRotate] = useState(true);
   const [showRoutes, setShowRoutes] = useState(true);
@@ -144,8 +154,11 @@ export default function App() {
   const [selectedPoint, setSelectedPoint] = useState<GlobePoint | null>(null);
   const [analysisTriggerId, setAnalysisTriggerId] = useState<number>(0);
 
-  const handleAnalyze = useCallback((point?: GlobePoint) => {
-    setSelectedPoint(point || null);
+  const handleAnalyze = useCallback((point?: GlobePoint | unknown) => {
+    const validPoint = (point && typeof point === 'object' && 'lat' in point && 'lng' in point && typeof (point as GlobePoint).lat === 'number' && typeof (point as GlobePoint).lng === 'number')
+      ? (point as GlobePoint)
+      : null;
+    setSelectedPoint(validPoint);
     setSidePanel('analysis');
     setAnalysisTriggerId(id => id + 1);
   }, []);

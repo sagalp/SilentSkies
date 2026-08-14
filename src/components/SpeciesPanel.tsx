@@ -247,7 +247,7 @@ function SelectedSpeciesCard({
 
       {!loading && riskScore?.alert && <IntelligenceAlertBanner alert={riskScore.alert} />}
 
-      <button className="analyze-button" onClick={onAnalyze}>
+      <button className="analyze-button" onClick={() => onAnalyze()}>
         <span>AI Deep Analysis</span>
         <ChevronRight size={14} />
       </button>
@@ -341,7 +341,7 @@ export function SpeciesPanel({
                   <button
                     key={species.key}
                     className={`species-item ${selected.key === species.key ? 'active' : ''}`}
-                    onClick={() => { onSelect(species); setActiveTab('detail'); }}
+                    onClick={() => onSelect(species)}
                   >
                     <span className="species-item-svg-icon" style={{ color: groupColor }}>
                       <BirdIcon size={20} color={selected.key === species.key ? groupColor : 'var(--text-muted)'} />

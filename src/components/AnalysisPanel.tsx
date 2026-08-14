@@ -142,15 +142,53 @@ function sanitizeAnalysisResult(raw: any, fallbackTrend: string): AnalysisResult
   const fallback = DEMO_ANALYSIS[fallbackTrend] || DEMO_ANALYSIS.stable;
   if (!raw || typeof raw !== 'object') return fallback;
 
+  const sanitizeHabitat = (arr: any) => {
+    if (!Array.isArray(arr) || arr.length === 0) return fallback.habitatThreat;
+    return arr.map((item, idx) => {
+      if (typeof item === 'object' && item !== null) {
+        return {
+          label: typeof item.label === 'string' ? item.label : `Threat factor ${idx + 1}`,
+          value: typeof item.value === 'number' && !isNaN(item.value) ? Math.max(0, Math.min(100, item.value)) : 50,
+        };
+      }
+      return { label: String(item || `Factor ${idx + 1}`), value: 50 };
+    });
+  };
+
+  const sanitizeRegional = (arr: any) => {
+    if (!Array.isArray(arr) || arr.length === 0) return fallback.regionalBreakdown;
+    return arr.map((item, idx) => {
+      if (typeof item === 'object' && item !== null) {
+        return {
+          region: typeof item.region === 'string' ? item.region : `Region ${idx + 1}`,
+          status: typeof item.status === 'string' ? item.status : (typeof item.description === 'string' ? item.description : 'Data under assessment'),
+        };
+      }
+      return { region: `Region ${idx + 1}`, status: String(item || 'Data under assessment') };
+    });
+  };
+
+  const sanitizePhenological = (obj: any) => {
+    if (typeof obj === 'object' && obj !== null) {
+      const score = typeof obj.score === 'number' && !isNaN(obj.score) ? obj.score : 50;
+      return {
+        score,
+        label: typeof obj.label === 'string' ? obj.label : (score >= 70 ? 'High Mismatch' : score >= 40 ? 'Moderate' : 'Low Risk'),
+        color: typeof obj.color === 'string' ? obj.color : (score >= 70 ? '#e63946' : score >= 40 ? '#e9c46a' : '#52b788'),
+      };
+    }
+    return fallback.phenologicalRisk;
+  };
+
   return {
     drivers: typeof raw.drivers === 'string' ? raw.drivers : (typeof raw.decline_drivers === 'string' ? raw.decline_drivers : fallback.drivers),
     localVsGlobal: typeof raw.localVsGlobal === 'string' ? raw.localVsGlobal : (typeof raw.local_vs_global === 'string' ? raw.local_vs_global : fallback.localVsGlobal),
     confidence: typeof raw.confidence === 'string' ? raw.confidence : fallback.confidence,
-    recommendations: Array.isArray(raw.recommendations) ? raw.recommendations : fallback.recommendations,
-    habitatThreat: Array.isArray(raw.habitatThreat) ? raw.habitatThreat : (Array.isArray(raw.habitat_threat) ? raw.habitat_threat : fallback.habitatThreat),
+    recommendations: Array.isArray(raw.recommendations) ? raw.recommendations.map((r: any) => typeof r === 'string' ? r : String(r)) : fallback.recommendations,
+    habitatThreat: sanitizeHabitat(raw.habitatThreat || raw.habitat_threat),
     migrationShift: typeof raw.migrationShift === 'string' ? raw.migrationShift : (typeof raw.migration_shift === 'string' ? raw.migration_shift : fallback.migrationShift),
-    phenologicalRisk: (raw.phenologicalRisk && typeof raw.phenologicalRisk === 'object') ? raw.phenologicalRisk : ((raw.phenological_risk && typeof raw.phenological_risk === 'object') ? raw.phenological_risk : fallback.phenologicalRisk),
-    regionalBreakdown: Array.isArray(raw.regionalBreakdown) ? raw.regionalBreakdown : (Array.isArray(raw.regional_breakdown) ? raw.regional_breakdown : fallback.regionalBreakdown),
+    phenologicalRisk: sanitizePhenological(raw.phenologicalRisk || raw.phenological_risk),
+    regionalBreakdown: sanitizeRegional(raw.regionalBreakdown || raw.regional_breakdown),
   };
 }
 
@@ -167,6 +205,8 @@ export function AnalysisPanel({ species, year, targetPoint, triggerId, onClose }
   const envKey = import.meta.env.VITE_NVIDIA_API_KEY || '';
   const effectiveApiKey = customKey || envKey;
 
+  const hasValidTarget = Boolean(targetPoint && typeof targetPoint.lat === 'number' && typeof targetPoint.lng === 'number');
+
   const runAnalysis = useCallback(async () => {
     setAnalyzing(true);
     setReasoningText('');
@@ -182,8 +222,8 @@ export function AnalysisPanel({ species, year, targetPoint, triggerId, onClose }
           dangerouslyAllowBrowser: true,
         });
 
-        const locationContext = targetPoint
-          ? `Selected Flyway / Coordinate Sector: Lat ${targetPoint.lat.toFixed(2)}°, Lng ${targetPoint.lng.toFixed(2)}°${targetPoint.locationName ? ` (${targetPoint.locationName})` : ''}`
+        const locationContext = hasValidTarget
+          ? `Selected Flyway / Coordinate Sector: Lat ${targetPoint!.lat.toFixed(2)}°, Lng ${targetPoint!.lng.toFixed(2)}°${targetPoint!.locationName ? ` (${targetPoint!.locationName})` : ''}`
           : `Global Native Range Focus`;
 
         const prompt = `You are an expert ornithologist and conservation data scientist analyzing bird population trends.
@@ -255,7 +295,7 @@ Respond with valid JSON only, no markdown code blocks.`;
     }
 
     setAnalyzing(false);
-  }, [effectiveApiKey, species, riskScore, year, targetPoint]);
+  }, [effectiveApiKey, species, riskScore, year, hasValidTarget, targetPoint]);
 
   // Auto-run analysis when panel mounts or when species/triggerId/targetPoint changes
   useEffect(() => {
@@ -310,10 +350,10 @@ Respond with valid JSON only, no markdown code blocks.`;
       </div>
 
       {/* Target location banner */}
-      {targetPoint && (
+      {hasValidTarget && (
         <div className="analysis-target-banner">
           <Map size={12} className="target-banner-icon" />
-          <span>Sector Focus: {targetPoint.lat.toFixed(2)}°, {targetPoint.lng.toFixed(2)}° {targetPoint.locationName ? `(${targetPoint.locationName})` : ''}</span>
+          <span>Sector Focus: {targetPoint!.lat.toFixed(2)}°, {targetPoint!.lng.toFixed(2)}° {targetPoint!.locationName ? `(${targetPoint!.locationName})` : ''}</span>
         </div>
       )}
 
