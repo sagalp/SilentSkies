@@ -41,7 +41,7 @@ SilentSkies is an interactive 3D globe application that tracks global bird occur
 ### Prerequisites
 
 - **Node.js** ≥ 18
-- An **API key** for Claude (Anthropic) or any OpenAI-compatible LLM endpoint
+- An **API key** for Nvidia NIM LLM endpoint
 
 ### Installation
 
