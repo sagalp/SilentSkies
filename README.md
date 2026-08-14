@@ -137,7 +137,6 @@ This ensures outputs are grounded and transparent, not generic chatbot responses
   "react-globe.gl": "^2.38.0",
   "three": "^0.185.1",
   "d3": "^7.9.0",
-  "openai": "^7.4.0",
   "lucide-react": "^1.28.0"
 }
 ```
