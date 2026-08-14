@@ -1515,23 +1515,252 @@ html, body, #root {
 }
 .analysis-species-name { font-size: 13.5px; font-weight: 700; }
 
-.analysis-target-banner {
+/* Mode Header Badge */
+.analysis-mode-badge-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid;
+  border-radius: 20px;
+  padding: 3px 9px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  margin-left: auto;
+  margin-right: 6px;
+}
+
+/* Redesigned Scope Banner */
+.analysis-scope-banner {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 10px;
   margin: 10px 18px 0;
-  padding: 6px 12px;
-  background: rgba(72, 202, 228, 0.08);
-  border: 1px solid rgba(72, 202, 228, 0.25);
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid;
+  flex-shrink: 0;
+  transition: all 0.25s ease;
+}
+
+.analysis-scope-banner.local {
+  background: rgba(72, 202, 228, 0.07);
+  border-color: rgba(72, 202, 228, 0.22);
+}
+
+.analysis-scope-banner.global {
+  background: rgba(82, 183, 136, 0.07);
+  border-color: rgba(82, 183, 136, 0.22);
+}
+
+.scope-banner-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
   border-radius: 8px;
-  color: var(--sky);
-  font-size: 11px;
-  font-weight: 600;
-  font-family: 'Space Grotesk', sans-serif;
+  border: 1px solid;
   flex-shrink: 0;
 }
 
-.target-banner-icon { flex-shrink: 0; color: var(--sky); }
+.scope-banner-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.scope-banner-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.1px;
+}
+
+.scope-banner-desc {
+  font-size: 10px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scope-banner-coord {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--sky);
+  background: rgba(72, 202, 228, 0.12);
+  padding: 2px 7px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+/* Sector Context Details (Local Mode) */
+.analysis-sector-context {
+  margin: 8px 18px 0;
+  padding: 6px;
+  background: rgba(72, 202, 228, 0.05);
+  border: 1px solid rgba(72, 202, 228, 0.18);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.sector-ctx-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background 0.15s ease;
+}
+
+.sector-ctx-toggle:hover {
+  background: rgba(72, 202, 228, 0.08);
+}
+
+.sector-ctx-toggle-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: rgba(72, 202, 228, 0.12);
+  border: 1px solid rgba(72, 202, 228, 0.25);
+  color: var(--sky);
+  flex-shrink: 0;
+}
+
+.sector-ctx-toggle-label {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 0.2px;
+  color: var(--text-primary);
+}
+
+.sector-ctx-toggle-summary {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sky);
+  background: rgba(72, 202, 228, 0.12);
+  padding: 2px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 55%;
+}
+
+.sector-ctx-toggle-chevron {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.sector-ctx-toggle-chevron.open {
+  transform: rotate(180deg);
+}
+
+.sector-context-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px 10px;
+  min-width: 0;
+  margin-top: 6px;
+  padding: 0 8px 4px;
+}
+
+.sector-ctx-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sector-ctx-item > div {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.sector-ctx-icon {
+  color: var(--sky);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.sector-ctx-label {
+  display: block;
+  font-size: 8.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+}
+
+.sector-ctx-value {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Global Scope Pills (Global Mode) */
+.analysis-global-scope {
+  margin: 10px 18px 0;
+  flex-shrink: 0;
+}
+
+.global-scope-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.global-scope-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9.5px;
+  color: var(--green-bright);
+  background: rgba(82, 183, 136, 0.08);
+  border: 1px solid rgba(82, 183, 136, 0.2);
+  border-radius: 14px;
+  padding: 2px 8px;
+  font-weight: 600;
+}
+
+.global-scope-pill.more {
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--border-dim);
+}
+
+/* Mode Summary in Results */
+.analysis-mode-summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border: 1px solid;
+  border-radius: 8px;
+  font-size: 11px;
+}
 
 /* NVIDIA Status & Reasoning styles */
 .nvidia-status-card {
@@ -1639,7 +1868,6 @@ html, body, #root {
   color: #76b900;
   font-size: 11px;
   font-weight: 700;
-  margin-bottom: 12px;
   font-family: 'Space Grotesk', sans-serif;
 }
 .analysis-species-sci {
@@ -1727,7 +1955,7 @@ html, body, #root {
   border: 1px solid var(--border-active);
   border-radius: 11px;
   padding: 11px;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--green-bright);
   cursor: pointer;
@@ -1792,6 +2020,12 @@ html, body, #root {
   flex-direction: column;
   gap: 12px;
   min-height: 0;
+  animation: fadeInResults 0.3s ease-out;
+}
+
+@keyframes fadeInResults {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .analysis-section {
@@ -1799,10 +2033,13 @@ html, body, #root {
   border: 1px solid var(--border-dim);
   border-radius: 10px;
   padding: 12px 13px;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background 0.2s;
 }
 
-.analysis-section:hover { border-color: var(--border-glass); }
+.analysis-section:hover {
+  border-color: var(--border-glass);
+  background: rgba(255, 255, 255, 0.035);
+}
 
 .analysis-section-title {
   font-size: 10px;
@@ -1936,22 +2173,28 @@ html, body, #root {
 
 /* Re-analyze button */
 .re-analyze-btn {
-  background: none;
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-dim);
   border-radius: 9px;
-  padding: 8px;
+  padding: 9px 12px;
   font-size: 11.5px;
+  font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
   font-family: 'Space Grotesk', sans-serif;
-  transition: all 0.15s;
+  transition: all 0.18s ease;
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
 }
 
 .re-analyze-btn:hover {
   color: var(--text-primary);
-  border-color: var(--border-glass);
-  background: rgba(255,255,255,0.025);
+  border-color: var(--border-active);
+  background: rgba(82, 183, 136, 0.08);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -3407,6 +3650,11 @@ html, body, #root {
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+.settings-btn-gear {
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
 /* ═══════════════════════════════════════════════════════
    SETTINGS MODAL
    ═══════════════════════════════════════════════════════ */
@@ -3458,6 +3706,8 @@ html, body, #root {
 .settings-gear-spin {
   color: var(--green-bright);
   animation: slow-gear-spin 20s linear infinite;
+  transform-origin: center;
+  transform-box: fill-box;
 }
 
 @keyframes slow-gear-spin {

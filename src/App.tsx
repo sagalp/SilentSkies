@@ -69,11 +69,11 @@ export default function App() {
     return watchList[0] || WATCH_LIST[0];
   });
   const [sidePanel, setSidePanel] = useState<SidePanel>('none');
-  const [autoRotate, setAutoRotate] = useState(true);
-  const [showRoutes, setShowRoutes] = useState(true);
   const [browserOpen, setBrowserOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(getInitialSettings);
+  const autoRotate = settings.autoRotate;
+  const showRoutes = settings.showRoutes;
 
   // Global UI Sound Effects Click Listener across the ENTIRE app
   useEffect(() => {
@@ -140,12 +140,12 @@ export default function App() {
   });
 
   const handleGlobeClick = useCallback((_lat: number, _lng: number) => {
-    setAutoRotate(false);
-  }, []);
+    handleUpdateSettings({ autoRotate: false });
+  }, [handleUpdateSettings]);
 
   const handlePointClick = useCallback((_pt: GlobePoint) => {
-    setAutoRotate(false);
-  }, []);
+    handleUpdateSettings({ autoRotate: false });
+  }, [handleUpdateSettings]);
 
   const handleSpeciesSelect = useCallback((species: Species) => {
     setSelectedSpecies(species);
@@ -274,14 +274,14 @@ export default function App() {
           <div className="globe-controls">
             <button
               className={`rotate-btn ${autoRotate ? 'active' : ''}`}
-              onClick={() => setAutoRotate(r => !r)}
+              onClick={() => handleUpdateSettings({ autoRotate: !autoRotate })}
               title="Toggle auto-rotation"
             >
               {autoRotate ? '⏸ Pause' : '▶ Rotate'}
             </button>
             <button
               className={`rotate-btn ${showRoutes ? 'active' : ''}`}
-              onClick={() => setShowRoutes(r => !r)}
+              onClick={() => handleUpdateSettings({ showRoutes: !showRoutes })}
               title="Toggle migration routes"
               style={{ display: 'flex', alignItems: 'center', gap: 5 }}
             >

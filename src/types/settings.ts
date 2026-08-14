@@ -1,8 +1,8 @@
 export interface AppSettings {
   // Globe & Visuals
+  autoRotate: boolean; // true = globe auto-rotates by default
   autoRotateSpeed: number; // 0.3, 1, 2.5, 5
   showAtmosphere: boolean;
-  showStarfield: boolean;
   pointLimit: number; // 100, 250, 400
   showRoutes: boolean;
   
@@ -25,9 +25,9 @@ export interface AppSettings {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
+  autoRotate: true,
   autoRotateSpeed: 1,
   showAtmosphere: true,
-  showStarfield: true,
   pointLimit: 400,
   showRoutes: true,
   

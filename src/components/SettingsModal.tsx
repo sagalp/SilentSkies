@@ -182,34 +182,6 @@ export function SettingsModal({
                     <span className="settings-switch-handle" />
                   </button>
                 </div>
-
-                {/* Starfield Toggle */}
-                <div className="settings-group">
-                  <div className="settings-row-info">
-                    <span className="settings-label">Space Starfield & Nebulae</span>
-                    <span className="settings-desc">Deep-space background star cluster rendering</span>
-                  </div>
-                  <button
-                    className={`settings-switch ${settings.showStarfield ? 'on' : ''}`}
-                    onClick={() => handleToggle('showStarfield')}
-                  >
-                    <span className="settings-switch-handle" />
-                  </button>
-                </div>
-
-                {/* Routes Toggle */}
-                <div className="settings-group">
-                  <div className="settings-row-info">
-                    <span className="settings-label">Migration Flyway Arcs</span>
-                    <span className="settings-desc">Display animated flyway routes between seasonal stopover zones</span>
-                  </div>
-                  <button
-                    className={`settings-switch ${settings.showRoutes ? 'on' : ''}`}
-                    onClick={() => handleToggle('showRoutes')}
-                  >
-                    <span className="settings-switch-handle" />
-                  </button>
-                </div>
               </div>
             )}
 
